@@ -78,6 +78,49 @@ Seeing as there seems to be a lot of interest in tinkering with autoresearch on 
 
 I think these would be the reasonable hyperparameters to play with. Ask your favorite coding agent for help and copy paste them this guide, as well as the full source code.
 
+## Swarm Mode
+
+Population-based evolutionary search. Multiple "islands" explore different directions independently on git worktrees, with periodic LLM-driven semantic crossover between them.
+
+### Setup and usage
+
+```bash
+# Create 4 islands (branches + worktrees + per-island program.md)
+python swarm.py launch --tag mar9 --num-islands 4
+
+# Launch Claude in each worktree (one terminal per island)
+cd worktrees/island-0 && claude    # "follow program.md"
+cd worktrees/island-1 && claude    # in another terminal
+cd worktrees/island-2 && claude
+cd worktrees/island-3 && claude
+
+# Check progress across all islands
+python swarm.py status
+
+# Clean up when done
+python swarm.py cleanup --tag mar9
+```
+
+For multiple GPUs, run all islands in parallel (one per terminal). With a single GPU, run one island at a time.
+
+### How it works
+
+Each island gets a generated `program.md` that extends the original with:
+
+- **Island identity & focus**: Each island specializes — architecture, optimization, training dynamics, or wild card exploration.
+- **Population tracking**: All islands log results to a shared `population.jsonl` in the repo root.
+- **Crossover**: Every 5th experiment, an island reads the best result from another island's `train.py` and combines ideas (LLM-driven semantic crossover).
+
+The default island focuses are:
+- **Island 0**: Architecture — attention, layers, embeddings, normalization
+- **Island 1**: Optimization — learning rates, schedulers, optimizer params
+- **Island 2**: Training dynamics — batch size, warmup, initialization, regularization
+- **Island 3+**: Wild card — unconventional ideas, radical departures
+
+### Checking results
+
+`python swarm.py status` reads `population.jsonl` and prints per-island stats (best val_bpb, experiment count, latest summary) plus the global best across all islands.
+
 ## Notable forks
 
 - [miolini/autoresearch-macos](https://github.com/miolini/autoresearch-macos) (MacOS)
